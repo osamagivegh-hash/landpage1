@@ -3,3 +3,4 @@
 # Replace with your actual Railway backend URL after deployment
 
 NEXT_PUBLIC_API_URL=https://your-backend-url.railway.app/api
+

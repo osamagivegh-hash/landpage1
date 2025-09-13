@@ -168,3 +168,4 @@ const ImageUpload = ({ onImageUpload, currentImage, className = '' }: ImageUploa
 };
 
 export default ImageUpload;
+

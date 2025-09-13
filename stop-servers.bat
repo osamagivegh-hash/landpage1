@@ -15,3 +15,4 @@ echo.
 echo ✅ تم إيقاف جميع الخوادم!
 echo.
 pause
+
