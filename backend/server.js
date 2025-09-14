@@ -14,10 +14,13 @@ app.use(cors({
   origin: [
     'https://restaurantsite-blue.vercel.app',
     'https://restaurantsite1.vercel.app',
+    'https://restaurantsite1-blue.vercel.app',
     'http://localhost:3000',
     'https://railway.com'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -65,12 +68,31 @@ app.get('/health', (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ 
+  res.status(200).json({ 
     message: 'Restaurant API Server', 
     status: 'running',
+    timestamp: new Date().toISOString(),
     endpoints: [
       '/api/meals',
       '/api/offers', 
+      '/api/restaurant',
+      '/api/messages',
+      '/api/admin',
+      '/api/upload'
+    ]
+  });
+});
+
+// Handle 404 errors
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Endpoint not found',
+    message: `Cannot ${req.method} ${req.originalUrl}`,
+    availableEndpoints: [
+      '/',
+      '/health',
+      '/api/meals',
+      '/api/offers',
       '/api/restaurant',
       '/api/messages',
       '/api/admin',

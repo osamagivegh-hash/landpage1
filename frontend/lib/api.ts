@@ -2,12 +2,39 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.up.railway.app/api';
 
+console.log('API_URL configured as:', API_URL);
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 seconds timeout
 });
+
+// Add request interceptor for debugging
+api.interceptors.request.use(
+  (config) => {
+    console.log('Making API request to:', config.baseURL + config.url);
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log('API response received:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('API response error:', error.response?.status, error.config?.url, error.message);
+    return Promise.reject(error);
+  }
+);
 
 // API functions
 export const apiService = {
