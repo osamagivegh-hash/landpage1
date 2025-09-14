@@ -3,6 +3,11 @@ const router = express.Router();
 const Meal = require('../models/Meal');
 const Offer = require('../models/Offer');
 const Restaurant = require('../models/Restaurant');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+
+// Apply authentication and admin role to all admin routes
+router.use(authenticateToken);
+router.use(requireAdmin);
 
 // Get dashboard stats
 router.get('/stats', async (req, res) => {

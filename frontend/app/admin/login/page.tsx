@@ -6,7 +6,7 @@ import { Eye, EyeOff, Lock, User } from 'lucide-react';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -16,8 +16,8 @@ const AdminLogin = () => {
 
   // معلومات الدخول الافتراضية
   const adminCredentials = {
-    username: 'admin',
-    password: 'osal123'
+    email: 'admin@restaurant.com',
+    password: 'admin123'
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,21 +33,41 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
 
-    // محاكاة عملية تسجيل الدخول
-    setTimeout(() => {
-      if (formData.username === adminCredentials.username && 
-          formData.password === adminCredentials.password) {
-        // حفظ حالة تسجيل الدخول
+    try {
+      // إرسال طلب تسجيل الدخول إلى الباك إند
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // حفظ التوكن ومعلومات المستخدم
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('adminLoggedIn', 'true');
-        localStorage.setItem('adminUser', formData.username);
         
-        // الانتقال إلى لوحة التحكم
-        router.push('/admin');
+        // التحقق من أن المستخدم admin
+        if (data.user.role === 'admin') {
+          router.push('/admin');
+        } else {
+          setError('ليس لديك صلاحية للوصول إلى لوحة التحكم');
+          localStorage.clear();
+        }
       } else {
-        setError('اسم المستخدم أو كلمة المرور غير صحيحة');
+        setError(data.message || 'خطأ في تسجيل الدخول');
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('خطأ في الاتصال بالخادم');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -75,23 +95,23 @@ const AdminLogin = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username Field */}
+            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2" style={{fontFamily: 'IBM Plex Sans Arabic, Cairo, sans-serif'}}>
-                اسم المستخدم
+                البريد الإلكتروني
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   required
                   className="w-full pr-10 pl-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="أدخل اسم المستخدم"
+                  placeholder="أدخل البريد الإلكتروني"
                 />
               </div>
             </div>
@@ -154,8 +174,8 @@ const AdminLogin = () => {
               بيانات الدخول التجريبية:
             </h3>
             <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>اسم المستخدم:</strong> admin</p>
-              <p><strong>كلمة المرور:</strong> osal123</p>
+              <p><strong>البريد الإلكتروني:</strong> admin@restaurant.com</p>
+              <p><strong>كلمة المرور:</strong> admin123</p>
             </div>
           </div>
         </div>

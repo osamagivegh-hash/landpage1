@@ -1,8 +1,10 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 
 // Load environment variables
 dotenv.config();
@@ -15,20 +17,14 @@ const ALLOWED_ORIGINS = [
   'https://restaurantsite1.vercel.app',
   'https://restaurantsite1-blue.vercel.app',
   'http://localhost:3000', // for development
-  'https://railway.com' // for Railway health checks
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.log('❌ CORS blocked origin:', origin);
-      return callback(new Error('Not allowed by CORS'), false);
-    }
+    if (!origin) return callback(null, true); // allow server-to-server requests
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    console.log('❌ CORS blocked origin:', origin);
+    return callback(new Error('Not allowed by CORS'), false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -37,29 +33,25 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle preflight for all routes
-
+app.options('*', cors(corsOptions)); // handle preflight
 app.use(express.json());
 
-// Debug middleware with CORS logging
+// Debug middleware for logging requests and CORS info
 app.use((req, res, next) => {
-  const origin = req.get('origin');
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} from ${origin || 'no-origin'}`);
+  const origin = req.get('origin') || 'no-origin';
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} from ${origin}`);
   
-  // Manual CORS headers as backup
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
+  } else if (!req.get('origin')) {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // allow curl/Postman
   }
   
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-  
+  if (req.method === 'OPTIONS') return res.status(204).end();
   next();
 });
 
@@ -77,13 +69,17 @@ const connectDB = async () => {
     console.error('❌ MongoDB connection error:', error);
     console.log('⚠️ Server will start without database connection');
   }
+
+  mongoose.connection.on('error', err => console.error('MongoDB runtime error:', err));
+  mongoose.connection.once('open', () => console.log('MongoDB runtime connection open'));
 };
 
-// Connect to database
+// Connect to DB
 connectDB();
 
-// Routes with error handling
+// Routes
 try {
+  app.use('/api/auth', require('./routes/auth'));
   app.use('/api/meals', require('./routes/meals'));
   app.use('/api/offers', require('./routes/offers'));
   app.use('/api/restaurant', require('./routes/restaurant'));
@@ -109,17 +105,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// CORS test endpoint
-app.get('/cors-test', (req, res) => {
+// Version endpoint
+app.get('/version', (req, res) => {
   res.status(200).json({
-    message: 'CORS is working!',
-    origin: req.get('origin') || 'no-origin',
-    corsHeaders: {
-      'Access-Control-Allow-Origin': req.get('origin') || 'no-origin',
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With,Accept',
-      'Access-Control-Allow-Credentials': 'true'
-    }
+    version: 'v1.0.0',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -157,23 +147,18 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       '/',
       '/health',
-      '/cors-test',
+      '/version',
       '/api/meals',
       '/api/offers',
       '/api/restaurant',
       '/api/messages',
       '/api/admin',
       '/api/upload'
-    ],
-    corsInfo: {
-      allowedOrigins: ALLOWED_ORIGINS,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-      credentials: true
-    }
+    ]
   });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
 
 console.log('🚀 Starting server...');
@@ -182,12 +167,11 @@ console.log('   PORT:', process.env.PORT);
 console.log('   NODE_ENV:', process.env.NODE_ENV);
 console.log('   MONGODB_URI:', process.env.MONGODB_URI ? '✅ Set' : '❌ Not set');
 
-// Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server is running on port ${PORT}`);
-  console.log(`✅ CORS enabled for: ${process.env.FRONTEND_URL || 'https://restaurantsite1.vercel.app'}`);
+  console.log(`✅ CORS enabled for: ${ALLOWED_ORIGINS.join(', ')}`);
   console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/health`);
-  console.log(`✅ Root endpoint available at: http://0.0.0.0:${PORT}/`);
+  console.log(`✅ Version endpoint available at: http://0.0.0.0:${PORT}/version`);
 });
 
 // Handle server errors

@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.up.railway.app';
 import { 
@@ -59,6 +61,8 @@ interface Message {
 }
 
 const AdminDashboard = () => {
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [meals, setMeals] = useState<Meal[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -68,44 +72,49 @@ const AdminDashboard = () => {
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showAddOffer, setShowAddOffer] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Check authentication on component mount
-  React.useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = () => {
-    const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
-    setIsAuthenticated(isLoggedIn);
-    setCheckingAuth(false);
-    
-    if (isLoggedIn) {
+  // Check authentication and load data
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated || user?.role !== 'admin') {
+        router.push('/admin/login');
+        return;
+      }
       loadData();
     }
-  };
+  }, [isAuthenticated, isLoading, user, router]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
       
       // Load meals
-      const mealsResponse = await fetch(`${API_BASE_URL}/api/admin/meals`);
+      const mealsResponse = await fetch(`${API_BASE_URL}/api/admin/meals`, { headers });
       if (mealsResponse.ok) {
         const mealsData = await mealsResponse.json();
         setMeals(mealsData);
       }
 
       // Load offers
-      const offersResponse = await fetch(`${API_BASE_URL}/api/admin/offers`);
+      const offersResponse = await fetch(`${API_BASE_URL}/api/admin/offers`, { headers });
       if (offersResponse.ok) {
         const offersData = await offersResponse.json();
         setOffers(offersData);
       }
 
       // Load messages
-      const messagesResponse = await fetch(`${API_BASE_URL}/api/messages`);
+      const messagesResponse = await fetch(`${API_BASE_URL}/api/messages`, { headers });
       if (messagesResponse.ok) {
         const messagesData = await messagesResponse.json();
         setMessages(messagesData);
@@ -280,14 +289,12 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('adminLoggedIn');
-    localStorage.removeItem('adminUser');
-    setIsAuthenticated(false);
-    window.location.href = '/admin/login';
+    logout();
+    router.push('/admin/login');
   };
 
   // Show loading while checking authentication
-  if (checkingAuth) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -300,10 +307,9 @@ const AdminDashboard = () => {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    window.location.href = '/admin/login';
-    return null;
+  // Redirect to login if not authenticated or not admin
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return null; // useEffect will handle redirect
   }
 
   return (
@@ -319,7 +325,7 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600" style={{fontFamily: 'IBM Plex Sans Arabic, Cairo, sans-serif'}}>
-                مرحباً، {localStorage.getItem('adminUser')}
+                مرحباً، {user?.username}
               </span>
               <button 
                 onClick={handleLogout}
