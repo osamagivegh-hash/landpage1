@@ -11,19 +11,39 @@ const app = express();
 
 // CORS configuration - Allow your Vercel frontend
 app.use(cors({
-  origin: [
-    'https://restaurantsite-blue.vercel.app',
-    'https://restaurantsite1.vercel.app',
-    'https://restaurantsite1-blue.vercel.app',
-    'http://localhost:3000',
-    'https://railway.com'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://restaurantsite-blue.vercel.app',
+      'https://restaurantsite1.vercel.app',
+      'https://restaurantsite1-blue.vercel.app',
+      'http://localhost:3000',
+      'https://railway.com'
+    ];
+    
+    console.log('CORS request from origin:', origin);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
+
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} from ${req.get('origin') || 'no-origin'}`);
+  next();
+});
 
 // MongoDB connection
 const connectDB = async () => {
@@ -62,7 +82,17 @@ app.get('/health', (req, res) => {
     status: 'OK', 
     message: 'Server is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    origin: req.get('origin') || 'no-origin'
+  });
+});
+
+// CORS test endpoint
+app.get('/cors-test', (req, res) => {
+  res.status(200).json({
+    message: 'CORS is working!',
+    origin: req.get('origin') || 'no-origin',
+    headers: req.headers
   });
 });
 
