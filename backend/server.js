@@ -11,27 +11,13 @@ const app = express();
 
 // CORS configuration - Allow your Vercel frontend
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'https://restaurantsite-blue.vercel.app',
-      'https://restaurantsite1.vercel.app',
-      'https://restaurantsite1-blue.vercel.app',
-      'http://localhost:3000',
-      'https://railway.com'
-    ];
-    
-    console.log('CORS request from origin:', origin);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    'https://restaurantsite-blue.vercel.app',
+    'https://restaurantsite1.vercel.app',
+    'https://restaurantsite1-blue.vercel.app',
+    'http://localhost:3000',
+    'https://railway.com'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -54,24 +40,28 @@ const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log('MongoDB connected successfully');
+    console.log('✅ MongoDB connected successfully');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
-    // In production, don't exit immediately - let the server start
-    console.log('Server will start without database connection');
+    console.error('❌ MongoDB connection error:', error);
+    console.log('⚠️ Server will start without database connection');
   }
 };
 
 // Connect to database
 connectDB();
 
-// Routes
-app.use('/api/meals', require('./routes/meals'));
-app.use('/api/offers', require('./routes/offers'));
-app.use('/api/restaurant', require('./routes/restaurant'));
-app.use('/api/messages', require('./routes/messages'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/upload', require('./routes/upload'));
+// Routes with error handling
+try {
+  app.use('/api/meals', require('./routes/meals'));
+  app.use('/api/offers', require('./routes/offers'));
+  app.use('/api/restaurant', require('./routes/restaurant'));
+  app.use('/api/messages', require('./routes/messages'));
+  app.use('/api/admin', require('./routes/admin'));
+  app.use('/api/upload', require('./routes/upload'));
+  console.log('✅ All routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading routes:', error);
+}
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -113,6 +103,15 @@ app.get('/', (req, res) => {
   });
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Global error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message
+  });
+});
+
 // Handle 404 errors
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -121,6 +120,7 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       '/',
       '/health',
+      '/cors-test',
       '/api/meals',
       '/api/offers',
       '/api/restaurant',
