@@ -12,6 +12,7 @@ const app = express();
 // CORS configuration - Allow your Vercel frontend
 app.use(cors({
   origin: [
+    'https://restaurantsite-blue.vercel.app',
     'https://restaurantsite1.vercel.app',
     'http://localhost:3000',
     'https://railway.com'
