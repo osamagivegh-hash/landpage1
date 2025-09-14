@@ -5,14 +5,10 @@ node = "18"
 nixPkgs = ["nodejs_18", "npm"]
 
 [phases.install]
-cmds = ["npm ci --only=production"]
+cmds = ["npm install"]
 
 [phases.build]
 cmds = ["echo 'Build complete'"]
 
 [start]
 cmd = "npm start"
-
-[variables]
-NODE_ENV = "production"
-PORT = "3001"

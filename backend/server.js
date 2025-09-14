@@ -81,7 +81,14 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+console.log('Starting server...');
+console.log('Environment variables:');
+console.log('PORT:', process.env.PORT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`CORS enabled for: ${process.env.FRONTEND_URL || 'https://restaurantsite1.vercel.app'}`);
+  console.log(`✅ Server is running on port ${PORT}`);
+  console.log(`✅ CORS enabled for: ${process.env.FRONTEND_URL || 'https://restaurantsite1.vercel.app'}`);
+  console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/health`);
 });
