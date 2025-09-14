@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.unsplash.com'],
+    domains: ['images.unsplash.com', 'landpage1-production.railway.app'],
   },
   env: {
-    API_URL: process.env.API_URL || 'http://localhost:5000/api',
+    API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.railway.app/api',
   },
 }
 

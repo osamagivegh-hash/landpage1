@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.railway.app';
 import { 
   LayoutDashboard, 
   Utensils, 
@@ -89,21 +91,21 @@ const AdminDashboard = () => {
       setLoading(true);
       
       // Load meals
-      const mealsResponse = await fetch('http://localhost:5000/api/admin/meals');
+      const mealsResponse = await fetch(`${API_BASE_URL}/api/admin/meals`);
       if (mealsResponse.ok) {
         const mealsData = await mealsResponse.json();
         setMeals(mealsData);
       }
 
       // Load offers
-      const offersResponse = await fetch('http://localhost:5000/api/admin/offers');
+      const offersResponse = await fetch(`${API_BASE_URL}/api/admin/offers`);
       if (offersResponse.ok) {
         const offersData = await offersResponse.json();
         setOffers(offersData);
       }
 
       // Load messages
-      const messagesResponse = await fetch('http://localhost:5000/api/messages');
+      const messagesResponse = await fetch(`${API_BASE_URL}/api/messages`);
       if (messagesResponse.ok) {
         const messagesData = await messagesResponse.json();
         setMessages(messagesData);
@@ -134,7 +136,7 @@ const AdminDashboard = () => {
   const handleDeleteMeal = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذه الوجبة؟')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/admin/meals/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/meals/${id}`, {
           method: 'DELETE',
         });
 
@@ -156,8 +158,8 @@ const AdminDashboard = () => {
   const handleSaveMeal = async (meal: Meal) => {
     try {
       const url = meal._id 
-        ? `http://localhost:5000/api/admin/meals/${meal._id}`
-        : 'http://localhost:5000/api/admin/meals';
+        ? `${API_BASE_URL}/api/admin/meals/${meal._id}`
+        : `${API_BASE_URL}/api/admin/meals`;
       
       const method = meal._id ? 'PUT' : 'POST';
       
@@ -203,7 +205,7 @@ const AdminDashboard = () => {
   const handleDeleteOffer = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا العرض؟')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/admin/offers/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/offers/${id}`, {
           method: 'DELETE',
         });
 
@@ -225,8 +227,8 @@ const AdminDashboard = () => {
   const handleSaveOffer = async (offer: Offer) => {
     try {
       const url = offer._id 
-        ? `http://localhost:5000/api/admin/offers/${offer._id}`
-        : 'http://localhost:5000/api/admin/offers';
+        ? `${API_BASE_URL}/api/admin/offers/${offer._id}`
+        : `${API_BASE_URL}/api/admin/offers`;
       
       const method = offer._id ? 'PUT' : 'POST';
       
@@ -263,7 +265,7 @@ const AdminDashboard = () => {
 
   const markMessageAsRead = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/${id}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/messages/${id}/read`, {
         method: 'PUT',
       });
 
@@ -566,7 +568,7 @@ const AdminDashboard = () => {
                       {offer.image && (
                         <div className="h-48 overflow-hidden">
                           <img
-                            src={offer.image.startsWith('http') ? offer.image : `http://localhost:5000${offer.image}`}
+                            src={offer.image.startsWith('http') ? offer.image : `${API_BASE_URL}${offer.image}`}
                             alt={offer.title}
                             className="w-full h-full object-cover"
                           />

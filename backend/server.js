@@ -9,11 +9,16 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
+// CORS configuration - Allow your Vercel frontend
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    'https://restaurantsite1.vercel.app',
+    'http://localhost:3000',
+    'https://railway.com'
+  ],
   credentials: true
 }));
+
 app.use(express.json());
 
 // MongoDB connection
@@ -41,27 +46,37 @@ connectDB();
 app.use('/api/meals', require('./routes/meals'));
 app.use('/api/offers', require('./routes/offers'));
 app.use('/api/restaurant', require('./routes/restaurant'));
-app.use('/api/admin', require('./routes/admin'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/upload', require('./routes/upload'));
 
-// Serve uploaded files
+// Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Health check route
-app.get('/api/health', (req, res) => {
-  res.json({ message: 'Restaurant API is running!' });
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Restaurant API Server', 
+    status: 'running',
+    endpoints: [
+      '/api/meals',
+      '/api/offers', 
+      '/api/restaurant',
+      '/api/messages',
+      '/api/admin',
+      '/api/upload'
+    ]
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`CORS enabled for: ${process.env.FRONTEND_URL || 'https://restaurantsite1.vercel.app'}`);
 });
-
