@@ -10,7 +10,7 @@ cmds = [
 cmds = []
 
 [start]
-cmd = "cd backend && npm start"
+cmd = "cd backend && npm run debug"
 
 [variables]
 NODE_ENV = "production"
