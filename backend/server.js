@@ -9,25 +9,57 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration - Allow your Vercel frontend
-app.use(cors({
-  origin: [
-    'https://restaurantsite-blue.vercel.app',
-    'https://restaurantsite1.vercel.app',
-    'https://restaurantsite1-blue.vercel.app',
-    'http://localhost:3000',
-    'https://railway.com'
-  ],
-  credentials: true,
+// CORS configuration - Production ready
+const ALLOWED_ORIGINS = [
+  'https://restaurantsite-blue.vercel.app',
+  'https://restaurantsite1.vercel.app',
+  'https://restaurantsite1-blue.vercel.app',
+  'http://localhost:3000', // for development
+  'https://railway.com' // for Railway health checks
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin:', origin);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight for all routes
 
 app.use(express.json());
 
-// Debug middleware
+// Debug middleware with CORS logging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} from ${req.get('origin') || 'no-origin'}`);
+  const origin = req.get('origin');
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} from ${origin || 'no-origin'}`);
+  
+  // Manual CORS headers as backup
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
   next();
 });
 
@@ -82,7 +114,12 @@ app.get('/cors-test', (req, res) => {
   res.status(200).json({
     message: 'CORS is working!',
     origin: req.get('origin') || 'no-origin',
-    headers: req.headers
+    corsHeaders: {
+      'Access-Control-Allow-Origin': req.get('origin') || 'no-origin',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With,Accept',
+      'Access-Control-Allow-Credentials': 'true'
+    }
   });
 });
 
@@ -127,7 +164,13 @@ app.use('*', (req, res) => {
       '/api/messages',
       '/api/admin',
       '/api/upload'
-    ]
+    ],
+    corsInfo: {
+      allowedOrigins: ALLOWED_ORIGINS,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+      credentials: true
+    }
   });
 });
 
