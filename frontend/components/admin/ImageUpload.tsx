@@ -50,7 +50,7 @@ const ImageUpload = ({ onImageUpload, currentImage, className = '' }: ImageUploa
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.railway.app'}/api/upload/image`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.up.railway.app'}/api/upload/image`, {
         method: 'POST',
         body: formData,
       });

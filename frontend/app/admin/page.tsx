@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.railway.app';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.up.railway.app';
 import { 
   LayoutDashboard, 
   Utensils, 

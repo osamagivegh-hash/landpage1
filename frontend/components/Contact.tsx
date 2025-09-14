@@ -26,7 +26,7 @@ const Contact = () => {
     e.preventDefault();
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.railway.app'}/api/messages`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://landpage1-production.up.railway.app'}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
