@@ -51,7 +51,6 @@ interface Message {
   subject: string;
   message: string;
   date: string;
-  date: string;
   time: string;
   guests: string;
   isRead: boolean;
