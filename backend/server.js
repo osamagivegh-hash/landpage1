@@ -32,6 +32,23 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
+// Error logging middleware
+app.use((err, req, res, next) => {
+  console.error('🔥 Unhandled Error:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+  });
+
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.stack : 'SERVER_ERROR'
+  });
+});
+
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // handle preflight
 app.use(express.json());

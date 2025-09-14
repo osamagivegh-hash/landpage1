@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in environment variables");
+}
+
 // Verify JWT token middleware
 const authenticateToken = async (req, res, next) => {
   try {
@@ -16,7 +20,15 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
+    // Check type (block refresh token on protected routes)
+    if (decoded.type && decoded.type === 'refresh') {
+      return res.status(401).json({
+        message: 'Refresh token not allowed for this endpoint.',
+        error: 'INVALID_TOKEN_TYPE'
+      });
+    }
+
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
@@ -60,7 +72,7 @@ const authenticateToken = async (req, res, next) => {
 
 // Admin role middleware
 const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ 
       message: 'Access denied. Admin role required.',
       error: 'INSUFFICIENT_PERMISSIONS'
